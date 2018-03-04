@@ -1,4 +1,6 @@
 # オセロ
-![オセロ](https://i.imgur.com/OdwVPU6.png)
+<p align="center">
+  <img width="242" height="255" src="https://i.imgur.com/EzYcPIs.png">
+</p>
 
-`$ python app.py`
+```$ python app.py```
