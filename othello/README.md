@@ -1,3 +1,4 @@
 # オセロ
-![オセロ](https://imgur.com/OdwVPU6)
+![オセロ](https://i.imgur.com/OdwVPU6.png)
+
 `$ python app.py`
