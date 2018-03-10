@@ -1,6 +1,6 @@
+import random
 import tkinter as tk
 from tkinter import messagebox
-import random
 
 
 class App(tk.Tk):
@@ -8,31 +8,32 @@ class App(tk.Tk):
         super(App, self).__init__()
         self.title("オセロ")
         self.geometry("{}x{}+{}+{}".format(550, 550, 300, 100))
-        self.resizable(width=0, height=0)
+        self.resizable(0, 0)
         self.iconbitmap("othello.ico")
         self.configure(bg="white")
-
-        # Widgetの設定
         self.turn = 1
         self.num_pass = 0
+        self.candidates = {}
+        self.flag = True
+        self.tmp = []
         self.set_widgets()
-        self.binding()
+        self.search_candidate()
+        self.color_candidate()
 
     def set_widgets(self):
+        # オセロ盤
         self.board = tk.Canvas(self, bg="lime green", width=350, height=350)
         self.board.pack(pady=(30, 0))
-        # Vertical line
-        for x in range(15, 336, 40):
-            self.board.create_line(x, 15, x, 335)
-        # Horizontal line
-        for y in range(15, 336, 40):
-            self.board.create_line(15, y, 335, y)
-        # Rectangle
+        # オセロ盤の設定
         self.board2info = [-1] * 10 + [[0, -1][i in [0, 9]] for i in range(10)] * 8 + [-1] * 10
+        # tag
         self.numstr = '12345678'
         self.alpstr = "abcdefgh"
+        # tagからクリックされたtagの位置を得る
         self.tag2pos = {}
+        # １次元の座標からtagを得る
         self.z2tag = {}
+        # 長方形を配置する。
         for i, y in zip(self.numstr, range(15, 336, 40)):
             for j, x in zip(self.alpstr, range(15, 336, 40)):
                 pos = x, y, x+40, y+40
@@ -40,7 +41,8 @@ class App(tk.Tk):
                 self.tag2pos[tag] = pos
                 self.board.create_rectangle(*pos, fill="lime green", tags=tag)
                 self.z2tag[self.z_coordinate(tag)] = tag
-        # Set up initial state
+                self.board.tag_bind(tag, "<ButtonPress-1>", self.pressed)
+        # 初期設定
         for p, i in zip([1, 2], "45"):
             for q, j in zip([2, 1], "de"):
                 color = ["black", "white"][p-q]
@@ -49,7 +51,8 @@ class App(tk.Tk):
                 self.board.create_oval(*self.tag2pos[tag], fill=color, tags=tag)
         self.get_board_info()
 
-        ##### Information #####
+        # Label
+        self.turn = 1
         self.info = tk.Canvas(self, bg="white", width=300, height=100)
         self.info.pack(pady=(30, 0))
         self.var = tk.StringVar()
@@ -57,13 +60,6 @@ class App(tk.Tk):
         self.label = tk.Label(self.info, bg="white",
                               font=("Helvetica", 15), textvariable=self.var)
         self.label.pack()
-
-        ##### Search #####
-        self.candidates = {}
-        self.flag = True
-        self.tmp = []
-        self.search_candidate()
-        self.color_candidate()
 
     def get_board_info(self):
         board_format = " {:2d} " * 10
@@ -75,29 +71,30 @@ class App(tk.Tk):
         y = self.numstr.index(tag[0])+1
         return y*10 + x
 
-    def binding(self):
-        for i in self.numstr:
-            for j in self.alpstr:
-                tag = i + j
-                self.board.tag_bind(tag, "<ButtonPress-1>", self.rect_pressed)
+    def update_label(self):
+        self.var.set("{}のターン".format(["AI", "あなた"][self.turn]))
 
-    def rect_pressed(self, event):
-        _id = self.board.find_closest(event.x, event.y)
-        tag = self.board.gettags(_id[0])[0]
-        print("Tag {} pressed".format(tag))
-        print("Z-{}".format(self.z_coordinate(tag)))
+    def pressed(self, event):
+        id = self.board.find_closest(event.x, event.y)
+        tag = self.board.gettags(id[0])[0]
+        #print("Tag {} pressed".format(tag))
+        # 符号から１次元の座標に変換
         z = self.z_coordinate(tag)
         if self.board2info[z] != 0: # 空白でなければ
             return
-        if tag not in self.candidates:
+        if tag not in self.candidates: # クリックされたところが、置けない場合
             return
+        # 候補手の色を元に戻す
         self.back_candidate()
+        # 盤の更新
         self.update_board(tag)
-        self.turn = self.turn ^ 1
+        # 手番の変更
+        self.turn = 0
+        # ラベルの更新
         self.update_label()
         self.get_board_info()
         ##### AI #####
-        self.after(1000, self.search_candidate)
+        self.search_candidate()
 
     def search_candidate(self):
         self.candidates = {}
@@ -121,10 +118,8 @@ class App(tk.Tk):
             self.update_label()
             self.search_candidate()
 
-        """
         if self.turn:
             return
-        """
         self.after(1000, self.next_turn)
 
     def next_turn(self):
@@ -184,9 +179,6 @@ class App(tk.Tk):
             self.board2info[z] = [1, 2][self.turn]
         self.board.create_oval(*self.tag2pos[tag], fill=["black", "white"][self.turn])
         self.board2info[self.z_coordinate(tag)] = [1, 2][self.turn]
-
-    def update_label(self):
-        self.var.set("{}のターン".format(["AI", "あなた"][self.turn]))
 
     def run(self):
         self.mainloop()
