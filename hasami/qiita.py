@@ -136,13 +136,12 @@ class App(tk.Tk):
             if flag == 0:
                 return
             self.current_tag = tag
-            # クリックされたところが、候補手にある。
+            # クリックされたところが、候補手にあるので盤面の更新。
             self.update_board(tag)
 
     def update_board(self, tag):
         if self.turn:
             self.lock = 1
-        #self.print_turn()
         # 候補手の色を元に戻す
         for z in self.candidates:
             ctag = self.z2tag[z]
@@ -156,9 +155,11 @@ class App(tk.Tk):
         self.unpressed = 1
         self.previous_tag = None
         self.candidates = []
+        # 挟まれているかの確認
         self.after(1000, self.check)
 
     def show(self, tag):
+        # 候補手の表示
         self.candidates = []
         z = self.z_coordinate(tag)
         self.search(z)
@@ -167,6 +168,7 @@ class App(tk.Tk):
             self.board.itemconfig(ctag, fill="Peach Puff1")
 
     def search(self, z):
+        # 候補手の探索
         for num in [-11, 11, 1, -1]:
             self.tmp = []
             self.run_search(z+num, num)
@@ -185,7 +187,27 @@ class App(tk.Tk):
         ans = self.z_coordinate(tag)
         return 1 if ans in self.candidates else 0
 
-    def enemy(self):
+    def check(self):
+        self.retrieves = []
+        z = self.z_coordinate(self.current_tag)
+        # 挟んでるかの確認
+        self.is_hasami(z)
+
+        # とる
+        for z in set(self.retrieves):
+            tag = self.z2tag[z]
+            self.board.itemconfig(tag, fill="skyblue")
+            self.draw_text(tag, self.board2info[z]-1)
+        if len(self.retrieves) > 0:
+            self.after(500, self.get_koma)
+
+        # 手番を変える
+        if self.turn:
+            self.after(1000, self.AI)
+        else:
+            self.after(1000, self.YOU)
+
+    def AI(self):
         if self.enlock:
             return
         self.turn = 0
@@ -203,25 +225,6 @@ class App(tk.Tk):
         # 動かした後の符号
         self.current_tag = self.z2tag[z]
         self.update_board(self.current_tag)
-
-    def check(self):
-        self.retrieves = []
-        z = self.z_coordinate(self.current_tag)
-        self.is_hasami(z)
-
-        # とる
-        for z in set(self.retrieves):
-            tag = self.z2tag[z]
-            self.board.itemconfig(tag, fill="skyblue")
-            self.draw_text(tag, self.board2info[z]-1)
-        if len(self.retrieves) > 0:
-            self.after(500, self.get_koma)
-
-        # 手番を変える
-        if self.turn:
-            self.after(1000, self.enemy)
-        else:
-            self.after(1000, self.YOU)
 
     def YOU(self):
             self.turn = 1
