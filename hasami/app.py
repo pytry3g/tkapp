@@ -1,3 +1,4 @@
+# Bug found
 import tkinter as tk
 import random
 
